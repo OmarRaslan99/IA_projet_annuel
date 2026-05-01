@@ -120,6 +120,76 @@ resource "aws_iam_policy" "ohazard_policy" {
           "logs:DescribeLogStreams"
         ]
         Resource = "arn:aws:logs:*:*:log-group:/aws/lambda/${var.project_name}-*"
+      },
+      # S3 AI -- lecture/ecriture buckets bronze, silver, models
+      {
+        Sid    = "S3AIReadWrite"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.data_bronze.arn,
+          "${aws_s3_bucket.data_bronze.arn}/*",
+          aws_s3_bucket.data_silver.arn,
+          "${aws_s3_bucket.data_silver.arn}/*",
+          aws_s3_bucket.models.arn,
+          "${aws_s3_bucket.models.arn}/*"
+        ]
+      },
+      # ECR -- push/pull images Docker Lambda AI
+      {
+        Sid    = "ECRAccess"
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:DescribeRepositories",
+          "ecr:ListImages",
+          "ecr:DescribeImages"
+        ]
+        Resource = "*"
+      },
+      # SageMaker -- lancement manuel de Training Jobs
+      {
+        Sid    = "SageMakerTrainingJobs"
+        Effect = "Allow"
+        Action = [
+          "sagemaker:CreateTrainingJob",
+          "sagemaker:DescribeTrainingJob",
+          "sagemaker:StopTrainingJob",
+          "sagemaker:ListTrainingJobs"
+        ]
+        Resource = "*"
+      },
+      # DynamoDB AI -- table predictions
+      {
+        Sid    = "DynamoDBAIPredictions"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:Scan",
+          "dynamodb:BatchGetItem",
+          "dynamodb:BatchWriteItem",
+          "dynamodb:DescribeTable"
+        ]
+        Resource = [
+          aws_dynamodb_table.predictions.arn,
+          "${aws_dynamodb_table.predictions.arn}/index/*"
+        ]
       }
     ]
   })
@@ -197,6 +267,21 @@ resource "aws_iam_role_policy" "lambda_app_policy" {
         Effect   = "Allow"
         Action   = ["secretsmanager:GetSecretValue"]
         Resource = aws_secretsmanager_secret.db_credentials.arn
+      },
+      # DynamoDB predictions -- le backend web écrit les prédictions AI
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:Query",
+          "dynamodb:Scan"
+        ]
+        Resource = [
+          aws_dynamodb_table.predictions.arn,
+          "${aws_dynamodb_table.predictions.arn}/index/*"
+        ]
       }
     ]
   })

@@ -47,3 +47,9 @@ variable "lambda_zip_path" {
   description = "Path to the Lambda zip file"
   type        = string
 }
+
+variable "ai_lambda_image_uri" {
+  description = "URI de l'image ECR pour la Lambda AI (ex: 123456.dkr.ecr.eu-west-3.amazonaws.com/ohazard-ai-lambda:latest). Laisser vide pour le premier terraform apply."
+  type        = string
+  default     = ""
+}

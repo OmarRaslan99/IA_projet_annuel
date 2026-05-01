@@ -74,3 +74,47 @@ output "api_gateway_id" {
   description = "ID de l'API Gateway"
   value       = aws_apigatewayv2_api.backend.id
 }
+
+# ============================================================
+# Outputs AI
+# ============================================================
+
+# --- S3 AI ---
+output "s3_bronze_bucket" {
+  description = "Bucket S3 données brutes (bronze)"
+  value       = aws_s3_bucket.data_bronze.id
+}
+
+output "s3_silver_bucket" {
+  description = "Bucket S3 données préparées (silver)"
+  value       = aws_s3_bucket.data_silver.id
+}
+
+output "s3_models_bucket" {
+  description = "Bucket S3 artefacts modèles (.pkl)"
+  value       = aws_s3_bucket.models.id
+}
+
+# --- ECR ---
+output "ecr_repository_url" {
+  description = "URL du repo ECR -- utiliser pour docker push et comme ai_lambda_image_uri"
+  value       = aws_ecr_repository.ai_lambda.repository_url
+}
+
+# --- DynamoDB predictions ---
+output "dynamodb_predictions_table_name" {
+  description = "Nom de la table DynamoDB predictions"
+  value       = aws_dynamodb_table.predictions.name
+}
+
+# --- Lambda AI ---
+output "ai_predict_url" {
+  description = "URL de l'endpoint AI predict (disponible après déploiement de l'image ECR)"
+  value       = var.ai_lambda_image_uri != "" ? "${aws_apigatewayv2_stage.backend.invoke_url}/ai/predict" : "Image ECR non déployée -- définir ai_lambda_image_uri dans terraform.tfvars"
+}
+
+# --- SageMaker ---
+output "sagemaker_exec_role_arn" {
+  description = "ARN du rôle SageMaker -- passer à create-training-job"
+  value       = aws_iam_role.sagemaker_exec.arn
+}
